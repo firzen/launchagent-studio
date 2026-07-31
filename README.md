@@ -1,5 +1,7 @@
 # LaunchAgent Studio
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 LaunchAgent Studio is a native macOS utility for viewing, enabling, disabling, running, creating, and deleting user-level `launchd` tasks stored in `~/Library/LaunchAgents`.
 
 [Product website](https://launchagentstudio.com/) · [Download the latest release](https://github.com/firzen/launchagent-studio/releases/latest)
@@ -56,4 +58,4 @@ LaunchAgent Studio manages user-level tasks in `~/Library/LaunchAgents`. It does
 
 ## License
 
-No open-source license has been selected yet. The source is publicly visible, but reuse and redistribution are not granted until a license is added.
+LaunchAgent Studio is available under the [MIT License](LICENSE).
