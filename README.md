@@ -2,7 +2,7 @@
 
 LaunchAgent Studio is a native macOS utility for viewing, enabling, disabling, running, creating, and deleting user-level `launchd` tasks stored in `~/Library/LaunchAgents`.
 
-[Product website](https://firzen.github.io/launchagent-studio/) · [Download the latest release](https://github.com/firzen/launchagent-studio/releases/latest)
+[Product website](https://launchagentstudio.com/) · [Download the latest release](https://github.com/firzen/launchagent-studio/releases/latest)
 
 For many user-level scheduled jobs, it can be used as a visual, macOS-native alternative to `crontab`. Instead of editing cron expressions manually, you can create `launchd` tasks that run applications, Shell scripts, or commands on a daily schedule, at login, or at a fixed interval.
 
