@@ -609,7 +609,7 @@ h1 {
 
 footer {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
   gap: 20px;
   width: min(1120px, calc(100% - 48px));
