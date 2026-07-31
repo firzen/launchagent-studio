@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <meta name="description" content="LaunchAgent Studio is a visual, native macOS task scheduler and crontab alternative.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="LaunchAgent Studio">
+  <meta property="og:description" content="A visual, native macOS task scheduler built on launchd.">
+  <meta property="og:url" content="https://firzen.github.io/launchagent-studio/">
+  <meta property="og:image" content="https://firzen.github.io/launchagent-studio/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>LaunchAgent Studio — Visual task scheduling for macOS</title>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="LaunchAgent Studio home">
+      <img src="favicon.png" alt="" width="38" height="38">
+      <span>LaunchAgent Studio</span>
+    </a>
+    <nav class="top-nav" aria-label="Primary navigation">
+      <a href="#features" data-i18n="navFeatures">Features</a>
+      <a href="#guide" data-i18n="navGuide">Get started</a>
+      <a href="https://github.com/firzen/launchagent-studio" target="_blank" rel="noreferrer">GitHub</a>
+      <div class="language-switch" role="group" aria-label="Language">
+        <button type="button" data-language="en" aria-pressed="true">EN</button>
+        <button type="button" data-language="zh" aria-pressed="false">中文</button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <div class="eyebrow">
+          <span class="status-dot"></span>
+          <span data-i18n="eyebrow">Native macOS utility · macOS 13+</span>
+        </div>
+        <h1 data-i18n="heroTitle">A visual task scheduler for your Mac.</h1>
+        <p class="hero-lead" data-i18n="heroLead">
+          Create and manage launchd tasks without hand-editing plist files. A friendly, macOS-native alternative to crontab for everyday user-level automation.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary" href="https://github.com/firzen/launchagent-studio/releases/latest/download/LaunchAgent-Studio-v1.5.0-universal.zip">
+            <span data-i18n="download">Download for macOS</span>
+            <span aria-hidden="true">↓</span>
+          </a>
+          <a class="button button-secondary" href="https://github.com/firzen/launchagent-studio/releases/latest" target="_blank" rel="noreferrer">
+            <span data-i18n="releaseNotes">View release notes</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <p class="download-meta" data-i18n="downloadMeta">Version 1.5.0 · Universal binary for Apple Silicon and Intel</p>
+      </div>
+
+      <div class="hero-visual" aria-label="LaunchAgent Studio application preview">
+        <div class="window">
+          <div class="window-bar" aria-hidden="true">
+            <span class="traffic red"></span>
+            <span class="traffic yellow"></span>
+            <span class="traffic green"></span>
+          </div>
+          <img src="launchagent-studio.png" alt="LaunchAgent Studio main window in English">
+        </div>
+        <div class="floating-card floating-card-top">
+          <span class="floating-icon">✓</span>
+          <span data-i18n="enabledFirst">Enabled tasks first</span>
+        </div>
+        <div class="floating-card floating-card-bottom">
+          <span class="floating-icon clock">22:00</span>
+          <span data-i18n="dailySchedule">Daily schedules</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="Product attributes">
+      <div><strong data-i18n="native">Native</strong><span data-i18n="nativeDetail">SwiftUI macOS app</span></div>
+      <div><strong data-i18n="private">Local</strong><span data-i18n="privateDetail">No account or cloud service</span></div>
+      <div><strong data-i18n="safe">Recoverable</strong><span data-i18n="safeDetail">Deleted tasks go to Trash</span></div>
+      <div><strong data-i18n="bilingual">Bilingual</strong><span data-i18n="bilingualDetail">English and Simplified Chinese</span></div>
+    </section>
+
+    <section class="section intro-section" id="features">
+      <div class="section-heading">
+        <span class="section-kicker" data-i18n="whyKicker">WHY LAUNCHAGENT STUDIO</span>
+        <h2 data-i18n="whyTitle">Automation that feels like a Mac app.</h2>
+        <p data-i18n="whyLead">launchd is powerful, but its configuration files are not designed for quick, everyday use. LaunchAgent Studio adds a clear interface without hiding what macOS is doing.</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <span class="feature-number">01</span>
+          <h3 data-i18n="featureCreateTitle">Create schedules visually</h3>
+          <p data-i18n="featureCreateText">Open an app, run a Shell script, or execute a command daily, at login, or on a fixed interval.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">02</span>
+          <h3 data-i18n="featureManageTitle">Manage the full lifecycle</h3>
+          <p data-i18n="featureManageText">Enable, disable, run immediately, inspect configuration, open logs, and remove user tasks from one place.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">03</span>
+          <h3 data-i18n="featureNamesTitle">Understand every task</h3>
+          <p data-i18n="featureNamesText">Friendly names and readable schedules make background services easier to identify than raw plist labels.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section screenshot-section">
+      <div class="screenshot-copy">
+        <span class="section-kicker" data-i18n="createKicker">CREATE A TASK</span>
+        <h2 data-i18n="createTitle">From an idea to a schedule in one window.</h2>
+        <p data-i18n="createLead">Choose what should run, decide when it should run, and optionally enable it immediately. The configuration is saved as a standard LaunchAgent in your user Library.</p>
+        <ul class="check-list">
+          <li data-i18n="createPoint1">Applications, Shell scripts, and commands</li>
+          <li data-i18n="createPoint2">Daily, login, and interval triggers</li>
+          <li data-i18n="createPoint3">Standard plist files remain visible and editable</li>
+        </ul>
+      </div>
+      <div class="screenshot-frame">
+        <img src="new-task.png" alt="New Scheduled Task window in LaunchAgent Studio" loading="lazy">
+      </div>
+    </section>
+
+    <section class="section guide-section" id="guide">
+      <div class="section-heading centered">
+        <span class="section-kicker" data-i18n="guideKicker">GET STARTED</span>
+        <h2 data-i18n="guideTitle">Running in three simple steps.</h2>
+      </div>
+      <div class="steps">
+        <article>
+          <span>1</span>
+          <h3 data-i18n="step1Title">Download</h3>
+          <p data-i18n="step1Text">Get the universal ZIP from the latest GitHub Release and extract it.</p>
+        </article>
+        <article>
+          <span>2</span>
+          <h3 data-i18n="step2Title">Move to Applications</h3>
+          <p data-i18n="step2Text">Drag LaunchAgent Studio into your Applications folder.</p>
+        </article>
+        <article>
+          <span>3</span>
+          <h3 data-i18n="step3Title">Open and manage</h3>
+          <p data-i18n="step3Text">Control-click the app and choose Open on the first launch, then create or manage your tasks.</p>
+        </article>
+      </div>
+
+      <aside class="notice">
+        <div class="notice-icon">i</div>
+        <div>
+          <strong data-i18n="noticeTitle">A note about the first launch</strong>
+          <p data-i18n="noticeText">The current public build is ad-hoc signed and not notarized. If macOS blocks it, Control-click the app and choose Open. LaunchAgent Studio only manages tasks in ~/Library/LaunchAgents and does not request administrator privileges.</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section faq-section">
+      <div class="section-heading">
+        <span class="section-kicker" data-i18n="faqKicker">COMMON QUESTIONS</span>
+        <h2 data-i18n="faqTitle">A native home for recurring tasks.</h2>
+      </div>
+      <div class="faq-list">
+        <details open>
+          <summary data-i18n="faqCronQuestion">Can it replace crontab?</summary>
+          <p data-i18n="faqCronAnswer">For many user-level scheduled jobs, yes. LaunchAgent Studio uses macOS launchd rather than cron, so the scheduling model is different, but daily, login, and fixed-interval automation is covered.</p>
+        </details>
+        <details>
+          <summary data-i18n="faqServerQuestion">Does it need a server or account?</summary>
+          <p data-i18n="faqServerAnswer">No. The app works locally on your Mac. This product page and its downloads are hosted by GitHub.</p>
+        </details>
+        <details>
+          <summary data-i18n="faqAdminQuestion">Does it manage system services?</summary>
+          <p data-i18n="faqAdminAnswer">No. It is intentionally limited to user LaunchAgents and does not manage system LaunchDaemons or request administrator access.</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <img src="favicon.png" alt="" width="72" height="72" loading="lazy">
+      <h2 data-i18n="ctaTitle">Put recurring Mac tasks in one clear place.</h2>
+      <p data-i18n="ctaText">Download LaunchAgent Studio and replace plist editing with a focused native interface.</p>
+      <div class="hero-actions centered-actions">
+        <a class="button button-primary" href="https://github.com/firzen/launchagent-studio/releases/latest/download/LaunchAgent-Studio-v1.5.0-universal.zip">
+          <span data-i18n="download">Download for macOS</span>
+          <span aria-hidden="true">↓</span>
+        </a>
+        <a class="button button-dark" href="https://github.com/firzen/launchagent-studio" target="_blank" rel="noreferrer">
+          <span data-i18n="viewSource">View on GitHub</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="brand footer-brand">
+      <img src="favicon.png" alt="" width="30" height="30" loading="lazy">
+      <span>LaunchAgent Studio</span>
+    </div>
+    <p data-i18n="footerText">A native macOS utility by firzen.</p>
+    <a href="https://github.com/firzen/launchagent-studio/releases/latest" data-i18n="allReleases">All releases</a>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
