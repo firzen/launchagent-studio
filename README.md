@@ -24,6 +24,7 @@ For many user-level scheduled jobs, it can be used as a visual, macOS-native alt
 - Shows enabled tasks first
 - Enables, disables, and runs tasks
 - Creates tasks that open applications, run Shell scripts, or execute commands
+- Edits tasks created by LaunchAgent Studio
 - Supports daily, login, and fixed-interval schedules
 - Opens task configuration files and logs
 - Moves deleted task files to the Trash

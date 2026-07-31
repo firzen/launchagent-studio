@@ -72,6 +72,10 @@ struct LaunchAgent: Identifiable, Hashable {
     let schedule: String
     let isLoaded: Bool
     let logURLs: [URL]
+
+    var isEditable: Bool {
+        label.hasPrefix("local.user.")
+    }
 }
 
 @MainActor
@@ -333,104 +337,189 @@ final class AgentStore: ObservableObject {
         }
     }
 
-    func createTask(_ draft: TaskDraft) -> String? {
-        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return tr("任务名称不能为空", "Task name is required") }
-
-        let arguments: [String]
-        switch draft.actionType {
-        case .application:
-            guard !draft.targetPath.isEmpty else {
-                return tr("请选择需要打开的应用", "Select an application to open")
-            }
-            guard FileManager.default.fileExists(atPath: draft.targetPath) else {
-                return tr("选择的应用不存在", "The selected application does not exist")
-            }
-            arguments = ["/usr/bin/open", draft.targetPath]
-        case .script:
-            guard !draft.targetPath.isEmpty else {
-                return tr("请选择需要运行的 Shell 脚本", "Select a Shell script to run")
-            }
-            guard FileManager.default.fileExists(atPath: draft.targetPath) else {
-                return tr("选择的脚本不存在", "The selected script does not exist")
-            }
-            arguments = ["/bin/zsh", draft.targetPath]
-        case .command:
-            let command = draft.command.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !command.isEmpty else { return tr("命令不能为空", "Command is required") }
-            arguments = ["/bin/zsh", "-lc", command]
+    func draft(for agent: LaunchAgent) -> TaskDraft? {
+        guard agent.isEditable,
+              let data = try? Data(contentsOf: agent.fileURL),
+              let object = try? PropertyListSerialization.propertyList(from: data, format: nil),
+              let plist = object as? [String: Any] else {
+            return nil
         }
 
-        guard (0...23).contains(draft.hour), (0...59).contains(draft.minute) else {
-            return tr("执行时间无效", "The scheduled time is invalid")
+        var draft = TaskDraft()
+        draft.name = displayNames[agent.label] ?? agent.displayName
+        draft.enableAfterCreate = agent.isLoaded
+
+        if let arguments = plist["ProgramArguments"] as? [String], !arguments.isEmpty {
+            if arguments.first == "/usr/bin/open", arguments.count >= 2 {
+                draft.actionType = .application
+                draft.targetPath = arguments[1]
+            } else if arguments.first == "/bin/zsh", arguments.count == 2 {
+                draft.actionType = .script
+                draft.targetPath = arguments[1]
+            } else if arguments.count >= 3, arguments[0] == "/bin/zsh", arguments[1] == "-lc" {
+                draft.actionType = .command
+                draft.command = arguments.dropFirst(2).joined(separator: " ")
+            } else {
+                return nil
+            }
+        } else {
+            return nil
         }
-        guard draft.intervalMinutes >= 1 else {
-            return tr("执行间隔不能小于 1 分钟", "The interval must be at least 1 minute")
+
+        if let calendar = plist["StartCalendarInterval"] as? [String: Any] {
+            draft.triggerType = .daily
+            draft.hour = calendar["Hour"] as? Int ?? 0
+            draft.minute = calendar["Minute"] as? Int ?? 0
+        } else if plist["RunAtLoad"] as? Bool == true {
+            draft.triggerType = .login
+        } else if let seconds = plist["StartInterval"] as? Int {
+            draft.triggerType = .interval
+            draft.intervalMinutes = max(1, seconds / 60)
+        } else {
+            draft.triggerType = .login
         }
 
-        let label = makeLabel(name)
-        let fileURL = launchAgentsURL.appendingPathComponent("\(label).plist")
-        let logURL = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/\(label).log")
+        return draft
+    }
 
-        var plist: [String: Any] = [
-            "Label": label,
-            "ProgramArguments": arguments,
-            "StandardOutPath": logURL.path,
-            "StandardErrorPath": logURL.path
-        ]
-
-        switch draft.triggerType {
-        case .daily:
-            plist["StartCalendarInterval"] = [
-                "Hour": draft.hour,
-                "Minute": draft.minute
+    func updateTask(_ agent: LaunchAgent, with draft: TaskDraft) -> String? {
+        guard agent.isEditable else {
+            return tr("只能编辑 LaunchAgent Studio 创建的任务", "Only tasks created by LaunchAgent Studio can be edited")
+        }
+        guard let error = validateDraft(draft) else {
+            let arguments = actionArguments(for: draft)
+            let logURL = agent.logURLs.first ?? FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Logs/\(agent.label).log")
+            var plist: [String: Any] = [
+                "Label": agent.label,
+                "ProgramArguments": arguments,
+                "StandardOutPath": logURL.path,
+                "StandardErrorPath": logURL.path
             ]
-        case .login:
-            plist["RunAtLoad"] = true
-        case .interval:
-            plist["StartInterval"] = draft.intervalMinutes * 60
-        }
 
-        do {
-            try FileManager.default.createDirectory(
-                at: launchAgentsURL,
-                withIntermediateDirectories: true
-            )
-            try FileManager.default.createDirectory(
-                at: logURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            let data = try PropertyListSerialization.data(
-                fromPropertyList: plist,
-                format: .xml,
-                options: 0
-            )
-            try data.write(to: fileURL, options: .atomic)
+            switch draft.triggerType {
+            case .daily:
+                plist["StartCalendarInterval"] = ["Hour": draft.hour, "Minute": draft.minute]
+            case .login:
+                plist["RunAtLoad"] = true
+            case .interval:
+                plist["StartInterval"] = draft.intervalMinutes * 60
+            }
 
-            displayNames[label] = name
-            try saveDisplayNames()
+            isBusy = true
+            defer { isBusy = false }
 
-            var enableError: String?
-            if draft.enableAfterCreate {
-                let result = run(
-                    executable: "/bin/launchctl",
-                    arguments: ["bootstrap", "gui/\(uid)", fileURL.path]
-                )
+            if agent.isLoaded {
+                let result = run(executable: "/bin/launchctl", arguments: ["bootout", "gui/\(uid)", agent.fileURL.path])
                 if result.status != 0 {
-                    let detail = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
-                    enableError = detail.isEmpty
-                        ? tr("创建成功，但启用失败", "Task created, but it could not be enabled")
-                        : tr("创建成功，但启用失败：\(detail)", "Task created, but it could not be enabled: \(detail)")
+                    return tr("保存失败：无法先禁用任务", "Save failed: the task could not be disabled first")
                 }
             }
 
-            refresh()
-            selectedID = label
-            message = enableError ?? tr("已创建任务「\(name)」", "Created task “\(name)”")
-            return nil
-        } catch {
-            return tr("创建失败：\(error.localizedDescription)", "Failed to create task: \(error.localizedDescription)")
+            do {
+                let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+                try data.write(to: agent.fileURL, options: .atomic)
+                displayNames[agent.label] = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                try saveDisplayNames()
+
+                if draft.enableAfterCreate {
+                    let result = run(executable: "/bin/launchctl", arguments: ["bootstrap", "gui/\(uid)", agent.fileURL.path])
+                    if result.status != 0 {
+                        refresh()
+                        return tr("已保存，但重新启用失败", "Saved, but the task could not be re-enabled")
+                    }
+                }
+                refresh()
+                selectedID = agent.label
+                message = tr("已更新任务「\(displayNames[agent.label] ?? agent.label)」", "Updated task “\(displayNames[agent.label] ?? agent.label)”")
+                return nil
+            } catch {
+                return tr("保存失败：\(error.localizedDescription)", "Failed to save task: \(error.localizedDescription)")
+            }
+        }
+        return error
+    }
+
+    func createTask(_ draft: TaskDraft) -> String? {
+        guard let validationError = validateDraft(draft) else {
+            let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let arguments = actionArguments(for: draft)
+
+            let label = makeLabel(name)
+            let fileURL = launchAgentsURL.appendingPathComponent("\(label).plist")
+            let logURL = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Library/Logs/\(label).log")
+
+            var plist: [String: Any] = [
+                "Label": label,
+                "ProgramArguments": arguments,
+                "StandardOutPath": logURL.path,
+                "StandardErrorPath": logURL.path
+            ]
+
+            switch draft.triggerType {
+            case .daily:
+                plist["StartCalendarInterval"] = ["Hour": draft.hour, "Minute": draft.minute]
+            case .login:
+                plist["RunAtLoad"] = true
+            case .interval:
+                plist["StartInterval"] = draft.intervalMinutes * 60
+            }
+
+            do {
+                try FileManager.default.createDirectory(at: launchAgentsURL, withIntermediateDirectories: true)
+                try FileManager.default.createDirectory(at: logURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+                try data.write(to: fileURL, options: .atomic)
+
+                displayNames[label] = name
+                try saveDisplayNames()
+
+                var enableError: String?
+                if draft.enableAfterCreate {
+                    let result = run(executable: "/bin/launchctl", arguments: ["bootstrap", "gui/\(uid)", fileURL.path])
+                    if result.status != 0 {
+                        let detail = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+                        enableError = detail.isEmpty
+                            ? tr("创建成功，但启用失败", "Task created, but it could not be enabled")
+                            : tr("创建成功，但启用失败：\(detail)", "Task created, but it could not be enabled: \(detail)")
+                    }
+                }
+
+                refresh()
+                selectedID = label
+                message = enableError ?? tr("已创建任务「\(name)」", "Created task “\(name)”")
+                return nil
+            } catch {
+                return tr("创建失败：\(error.localizedDescription)", "Failed to create task: \(error.localizedDescription)")
+            }
+        }
+        return validationError
+    }
+
+    private func validateDraft(_ draft: TaskDraft) -> String? {
+        let name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return tr("任务名称不能为空", "Task name is required") }
+        switch draft.actionType {
+        case .application:
+            guard !draft.targetPath.isEmpty else { return tr("请选择需要打开的应用", "Select an application to open") }
+            guard FileManager.default.fileExists(atPath: draft.targetPath) else { return tr("选择的应用不存在", "The selected application does not exist") }
+        case .script:
+            guard !draft.targetPath.isEmpty else { return tr("请选择需要运行的 Shell 脚本", "Select a Shell script to run") }
+            guard FileManager.default.fileExists(atPath: draft.targetPath) else { return tr("选择的脚本不存在", "The selected script does not exist") }
+        case .command:
+            guard !draft.command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return tr("命令不能为空", "Command is required") }
+        }
+        guard (0...23).contains(draft.hour), (0...59).contains(draft.minute) else { return tr("执行时间无效", "The scheduled time is invalid") }
+        guard draft.intervalMinutes >= 1 else { return tr("执行间隔不能小于 1 分钟", "The interval must be at least 1 minute") }
+        return nil
+    }
+
+    private func actionArguments(for draft: TaskDraft) -> [String] {
+        switch draft.actionType {
+        case .application: return ["/usr/bin/open", draft.targetPath]
+        case .script: return ["/bin/zsh", draft.targetPath]
+        case .command: return ["/bin/zsh", "-lc", draft.command.trimmingCharacters(in: .whitespacesAndNewlines)]
         }
     }
 
@@ -665,6 +754,7 @@ final class AgentStore: ObservableObject {
 struct ContentView: View {
     @StateObject private var store = AgentStore()
     @State private var isCreatingTask = false
+    @State private var isEditingTask = false
     @State private var isConfirmingDelete = false
     @State private var isShowingUpdateAlert = false
 
@@ -684,6 +774,11 @@ struct ContentView: View {
         }
         .sheet(isPresented: $isCreatingTask) {
             NewTaskView(store: store, isPresented: $isCreatingTask)
+        }
+        .sheet(isPresented: $isEditingTask) {
+            if let selected = store.selected {
+                NewTaskView(store: store, isPresented: $isEditingTask, agent: selected)
+            }
         }
         .alert(
             store.tr("删除任务", "Delete Task"),
@@ -822,6 +917,10 @@ struct ContentView: View {
                     .disabled(store.selected == nil)
                 Button(store.tr("打开日志", "Open Log")) { store.openLog() }
                     .disabled(store.selected == nil)
+                Button(store.tr("编辑", "Edit")) {
+                    isEditingTask = true
+                }
+                .disabled(store.selected?.isEditable != true || store.isBusy)
                 Button(store.tr("删除", "Delete"), role: .destructive) {
                     isConfirmingDelete = true
                 }
@@ -846,14 +945,29 @@ struct ContentView: View {
 struct NewTaskView: View {
     @ObservedObject var store: AgentStore
     @Binding var isPresented: Bool
+    private let editingAgent: LaunchAgent?
     @State private var draft = TaskDraft()
     @State private var errorMessage = ""
+
+    init(store: AgentStore, isPresented: Binding<Bool>, agent: LaunchAgent? = nil) {
+        self.store = store
+        self._isPresented = isPresented
+        self.editingAgent = agent
+        self._draft = State(initialValue: agent.flatMap(store.draft) ?? TaskDraft())
+    }
+
+    private var isEditing: Bool {
+        editingAgent != nil
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(store.tr("新增定时任务", "New Scheduled Task"))
+                    Text(store.tr(
+                        isEditing ? "编辑定时任务" : "新增定时任务",
+                        isEditing ? "Edit Scheduled Task" : "New Scheduled Task"
+                    ))
                         .font(.title2.weight(.semibold))
                     Text(store.tr(
                         "任务配置将保存到 ~/Library/LaunchAgents",
@@ -970,8 +1084,17 @@ struct NewTaskView: View {
                     isPresented = false
                 }
                 .keyboardShortcut(.cancelAction)
-                Button(store.tr("创建任务", "Create Task")) {
-                    if let error = store.createTask(draft) {
+                Button(store.tr(
+                    isEditing ? "保存修改" : "创建任务",
+                    isEditing ? "Save Changes" : "Create Task"
+                )) {
+                    let result: String?
+                    if let editingAgent {
+                        result = store.updateTask(editingAgent, with: draft)
+                    } else {
+                        result = store.createTask(draft)
+                    }
+                    if let error = result {
                         errorMessage = error
                     } else {
                         isPresented = false

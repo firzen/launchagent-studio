@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.0
+
+- Added editing for tasks created by LaunchAgent Studio
+
 ## 1.6.0
 
 - Added automatic GitHub Release update checks
