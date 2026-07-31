@@ -688,14 +688,19 @@ struct ContentView: View {
         .listStyle(.inset)
         .overlay {
             if store.agents.isEmpty {
-                ContentUnavailableView(
-                    store.tr("没有找到用户任务", "No User Tasks Found"),
-                    systemImage: "tray",
-                    description: Text(store.tr(
+                VStack(spacing: 10) {
+                    Image(systemName: "tray")
+                        .font(.system(size: 34))
+                        .foregroundStyle(.secondary)
+                    Text(store.tr("没有找到用户任务", "No User Tasks Found"))
+                        .font(.headline)
+                    Text(store.tr(
                         "~/Library/LaunchAgents 中没有可读取的 plist",
                         "No readable plist files were found in ~/Library/LaunchAgents"
                     ))
-                )
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                }
             }
         }
     }

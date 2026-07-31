@@ -2,6 +2,8 @@
 
 LaunchAgent Studio is a native macOS utility for viewing, enabling, disabling, running, creating, and deleting user-level `launchd` tasks stored in `~/Library/LaunchAgents`.
 
+![LaunchAgent Studio interface](docs/launchagent-studio.png)
+
 ## Features
 
 - Lists user LaunchAgents with friendly names and schedules

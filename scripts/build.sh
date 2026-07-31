@@ -6,10 +6,14 @@ PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="$PROJECT_DIR/dist"
 APP_PATH="$DIST_DIR/LaunchAgent Studio.app"
 CONTENTS_DIR="$APP_PATH/Contents"
+SDK_PATH="$(xcrun --sdk macosx --show-sdk-path)"
+TARGET_ARCH="$(uname -m)"
 
 mkdir -p "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Resources"
 
 swiftc \
+  -target "$TARGET_ARCH-apple-macosx13.0" \
+  -sdk "$SDK_PATH" \
   -parse-as-library \
   -O \
   -framework SwiftUI \
