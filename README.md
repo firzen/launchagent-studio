@@ -29,6 +29,7 @@ For many user-level scheduled jobs, it can be used as a visual, macOS-native alt
 - Moves deleted task files to the Trash
 - Supports English and Simplified Chinese
 - Uses the system language on first launch
+- Checks GitHub Releases for updates and opens the matching download page
 
 ## Requirements
 

@@ -2,6 +2,27 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+struct ReleaseInfo: Identifiable, Hashable {
+    let tagName: String
+    let name: String
+    let htmlURL: URL
+
+    var id: String { tagName }
+    var versionText: String { tagName.trimmingCharacters(in: CharacterSet(charactersIn: "vV")) }
+}
+
+private struct GitHubRelease: Decodable {
+    let tagName: String
+    let name: String?
+    let htmlURL: URL
+
+    enum CodingKeys: String, CodingKey {
+        case tagName = "tag_name"
+        case name
+        case htmlURL = "html_url"
+    }
+}
+
 enum AppLanguage: String, CaseIterable, Identifiable {
     case zhHans
     case english
@@ -60,9 +81,11 @@ final class AgentStore: ObservableObject {
     @Published var message = "正在读取用户任务…"
     @Published var isBusy = false
     @Published var language: AppLanguage
+    @Published var availableUpdate: ReleaseInfo?
 
     private let uid = getuid()
     private var displayNames: [String: String] = [:]
+    private var isCheckingForUpdates = false
 
     init() {
         let defaults = UserDefaults.standard
@@ -87,6 +110,66 @@ final class AgentStore: ObservableObject {
         UserDefaults.standard.set(newLanguage.rawValue, forKey: "AppLanguage")
         UserDefaults.standard.set(true, forKey: "HasExplicitLanguageChoice")
         refresh()
+    }
+
+    func checkForUpdates() {
+        guard !isCheckingForUpdates else { return }
+        isCheckingForUpdates = true
+
+        Task { [weak self] in
+            defer { self?.isCheckingForUpdates = false }
+            guard let self else { return }
+
+            do {
+                var request = URLRequest(url: URL(string: "https://api.github.com/repos/firzen/launchagent-studio/releases/latest")!)
+                request.setValue("LaunchAgent-Studio", forHTTPHeaderField: "User-Agent")
+                request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+                let (data, response) = try await URLSession.shared.data(for: request)
+                guard let httpResponse = response as? HTTPURLResponse,
+                      (200...299).contains(httpResponse.statusCode) else { return }
+
+                let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
+                guard Self.isNewer(release.tagName, than: Self.currentVersion) else { return }
+
+                let update = ReleaseInfo(
+                    tagName: release.tagName,
+                    name: release.name?.isEmpty == false ? release.name! : release.tagName,
+                    htmlURL: release.htmlURL
+                )
+                let defaults = UserDefaults.standard
+                guard defaults.string(forKey: "LastNotifiedReleaseTag") != update.tagName else { return }
+                defaults.set(update.tagName, forKey: "LastNotifiedReleaseTag")
+                availableUpdate = update
+            } catch {
+                // Update checks are best-effort and should not interrupt normal app use.
+            }
+        }
+    }
+
+    func openRelease(_ release: ReleaseInfo) {
+        NSWorkspace.shared.open(release.htmlURL)
+        availableUpdate = nil
+    }
+
+    private static let currentVersion: String = {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.5.0"
+    }()
+
+    private static func isNewer(_ remote: String, than local: String) -> Bool {
+        func components(_ version: String) -> [Int] {
+            version
+                .trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+                .split(separator: ".")
+                .map { part in Int(part.prefix { $0.isNumber }) ?? 0 }
+        }
+        let remoteParts = components(remote)
+        let localParts = components(local)
+        for index in 0..<max(remoteParts.count, localParts.count) {
+            let remoteValue = index < remoteParts.count ? remoteParts[index] : 0
+            let localValue = index < localParts.count ? localParts[index] : 0
+            if remoteValue != localValue { return remoteValue > localValue }
+        }
+        return false
     }
 
     private static func systemLanguage() -> AppLanguage {
@@ -583,6 +666,7 @@ struct ContentView: View {
     @StateObject private var store = AgentStore()
     @State private var isCreatingTask = false
     @State private var isConfirmingDelete = false
+    @State private var isShowingUpdateAlert = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -594,6 +678,10 @@ struct ContentView: View {
         }
         .frame(minWidth: 760, minHeight: 460)
         .onAppear { store.refresh() }
+        .task { store.checkForUpdates() }
+        .onReceive(store.$availableUpdate) { update in
+            isShowingUpdateAlert = update != nil
+        }
         .sheet(isPresented: $isCreatingTask) {
             NewTaskView(store: store, isPresented: $isCreatingTask)
         }
@@ -610,6 +698,21 @@ struct ContentView: View {
             Text(store.tr(
                 "任务「\(agent.displayName)」将先被禁用，再移到废纸篓。",
                 "“\(agent.displayName)” will be disabled and moved to the Trash."
+            ))
+        }
+        .alert(
+            store.tr("发现新版本", "New Version Available"),
+            isPresented: $isShowingUpdateAlert,
+            presenting: store.availableUpdate
+        ) { release in
+            Button(store.tr("更新", "Update")) {
+                store.openRelease(release)
+            }
+            Button(store.tr("稍后", "Later"), role: .cancel) {}
+        } message: { release in
+            Text(store.tr(
+                "LaunchAgent Studio \(release.versionText) 已发布。是否打开 Release 下载页面？",
+                "LaunchAgent Studio \(release.versionText) is available. Open the Release download page?"
             ))
         }
     }

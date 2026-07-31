@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0
+
+- Added automatic GitHub Release update checks
+- Shows a new-version reminder once per Release
+- Opens the matching GitHub Release download page from the update reminder
+
 ## 1.5.0
 
 - Added automatic language selection based on the system language
