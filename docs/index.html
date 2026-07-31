@@ -4,16 +4,39 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f7fb">
-  <meta name="description" content="LaunchAgent Studio is a visual, native macOS task scheduler and crontab alternative.">
+  <meta name="application-name" content="LaunchAgent Studio">
+  <meta name="description" content="A native launchd GUI and LaunchAgent manager for macOS. Create scheduled tasks visually and use it as a friendly crontab, LaunchControl, or Launchd Manager alternative.">
+  <meta name="keywords" content="launchd GUI, LaunchAgent manager, macOS task scheduler, crontab alternative macOS, LaunchControl alternative, Launchd Manager, launchctl GUI, macOS scheduled tasks, macOS automation, macOS 定时任务, launchd 管理器, crontab 替代">
   <meta property="og:type" content="website">
   <meta property="og:title" content="LaunchAgent Studio">
-  <meta property="og:description" content="A visual, native macOS task scheduler built on launchd.">
+  <meta property="og:description" content="A native launchd GUI, LaunchAgent manager, and visual crontab alternative for macOS.">
   <meta property="og:url" content="https://firzen.github.io/launchagent-studio/">
   <meta property="og:image" content="https://firzen.github.io/launchagent-studio/og.png">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="https://firzen.github.io/launchagent-studio/">
   <link rel="icon" href="favicon.png">
   <link rel="stylesheet" href="styles.css">
-  <title>LaunchAgent Studio — Visual task scheduling for macOS</title>
+  <title>LaunchAgent Studio — launchd GUI and crontab alternative for macOS</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "LaunchAgent Studio",
+    "description": "A native launchd GUI, LaunchAgent manager, and visual crontab alternative for macOS.",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "macOS 13 or later",
+    "softwareVersion": "1.5.0",
+    "inLanguage": ["en", "zh-CN"],
+    "image": "https://firzen.github.io/launchagent-studio/og.png",
+    "screenshot": "https://firzen.github.io/launchagent-studio/launchagent-studio.png",
+    "downloadUrl": "https://github.com/firzen/launchagent-studio/releases/latest",
+    "codeRepository": "https://github.com/firzen/launchagent-studio",
+    "author": {
+      "@type": "Person",
+      "name": "firzen"
+    }
+  }
+  </script>
 </head>
 <body>
   <header class="site-header">
@@ -174,6 +197,10 @@
         <details>
           <summary data-i18n="faqAdminQuestion">Does it manage system services?</summary>
           <p data-i18n="faqAdminAnswer">No. It is intentionally limited to user LaunchAgents and does not manage system LaunchDaemons or request administrator access.</p>
+        </details>
+        <details>
+          <summary data-i18n="faqAlternativeQuestion">Is it an alternative to LaunchControl or a launchd manager?</summary>
+          <p data-i18n="faqAlternativeAnswer">Yes. LaunchAgent Studio provides a focused interface for common user-level LaunchAgent tasks. It is not affiliated with LaunchControl or other launchd management products.</p>
         </details>
       </div>
     </section>
